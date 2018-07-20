@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import argparse
 import datetime
 import json
@@ -13,12 +14,6 @@ try:                 # Python 2
     from urllib.parse import urljoin, urlparse
 except ImportError:  # Python 3
     from urlparse import urljoin, urlparse
-
-try:                 # Python 2
-    reload(sys)
-    sys.setdefaultencoding('latin-1')
-except NameError:    # Python 3
-    pass
 
 
 class Crawler(object):
