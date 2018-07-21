@@ -10,11 +10,17 @@ import time
 
 import requests
 
+
 try:                 # Python 2
     from urllib.parse import urljoin, urlparse
 except ImportError:  # Python 3
     from urlparse import urljoin, urlparse
 
+try:                 # Python 2
+    reload(sys)
+    sys.setdefaultencoding('utf-8')
+except NameError:    # Python 3
+    pass
 
 class Crawler(object):
     def __init__(self):
@@ -54,7 +60,12 @@ class Crawler(object):
         :param root_url: the URL the DOM was loaded from
         :return: absolute link
         """
-        parsed_url = urlparse(link)
+        try:
+            parsed_url = urlparse(link)
+        except ValueError:
+            # urlparse can get confused about urls with the ']'
+            # character and thinks it must be a malformed IPv6 URL
+            return None
         parsed_root_url = urlparse(root_url)
 
         # '//' means keep the current protocol used to access this URL
@@ -91,7 +102,10 @@ class Crawler(object):
         :param url: full URL
         :return: boolean indicating whether a URL is blacklisted or not
         """
-        return any(blacklisted_url in url for blacklisted_url in self._config["blacklisted_urls"])
+        try:
+            return any(blacklisted_url in url for blacklisted_url in self._config["blacklisted_urls"])
+        except UnicodeDecodeError:
+            return True
 
     def _should_accept_url(self, url):
         """
@@ -99,7 +113,7 @@ class Crawler(object):
         :param url: full url to be checked
         :return: boolean of whether or not the url should be accepted and potentially visited
         """
-        return self._is_valid_url(url) and not self._is_blacklisted(url)
+        return url and self._is_valid_url(url) and not self._is_blacklisted(url)
 
     def _extract_urls(self, body, root_url):
         """
