@@ -1,5 +1,5 @@
 {
-    "max_depth": 25,
+    "max_depth": 100,
     "min_sleep": 2,
     "max_sleep": 15,
     "timeout": false,
