@@ -8,6 +8,7 @@ import re
 import requests
 import sys
 import time
+import signal
 from urllib3.exceptions import LocationParseError
 
 
@@ -32,12 +33,21 @@ class Crawler(object):
         self._config = {}
         self._links = []
         self._start_time = None
+        signal.signal(signal.SIGINT, self._signal_sigint_handler)
 
-    class CrawlerTimedOut(Exception):
+    class LifecycleManagement(Exception):
         """
-        Raised when the specified timeout is exceeded
+        Raised when program lifecycle event happens.
         """
-        pass
+        def __init__(self, event = None):
+            """
+            Initializes the exception with the user defined reason
+            :param event: the event happening in the lifecycle of the program
+            """
+            self.reason = event
+
+    def _signal_sigint_handler(self, sig, frame):
+        raise self.LifecycleManagement("SIGINT received.")
 
     def _request(self, url):
         """
@@ -157,7 +167,7 @@ class Crawler(object):
             return
 
         if self._is_timeout_reached():
-            raise self.CrawlerTimedOut
+            raise self.LifecycleManagement("Timeout reached.")
 
         random_link = random.choice(self._links)
         try:
@@ -252,8 +262,8 @@ class Crawler(object):
             except LocationParseError:
                 logging.warn("Error encountered during parsing of: {}".format(url))
 
-            except self.CrawlerTimedOut:
-                logging.info("Timeout has exceeded, exiting")
+            except self.LifecycleManagement as e:
+                logging.info("Exiting with reason: {}".format(e.reason))
                 return
             
             except:
