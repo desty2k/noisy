@@ -5,24 +5,26 @@ import json
 import logging
 import random
 import re
+import requests
 import sys
 import time
-
-import requests
 from urllib3.exceptions import LocationParseError
 
-try:                 # Python 2
+
+try:  # Python 2
     from urllib.parse import urljoin, urlparse
 except ImportError:  # Python 3
     from urlparse import urljoin, urlparse
 
-try:                 # Python 2
+try:  # Python 2
     reload(sys)
     sys.setdefaultencoding('utf-8')
-except NameError:    # Python 3
+except NameError:  # Python 3
     pass
 
+
 class Crawler(object):
+
     def __init__(self):
         """
         Initializes the Crawl class
@@ -257,6 +259,7 @@ class Crawler(object):
             except:
                 logging.error("Unrecoverable encountered at url: {}".format(url))
                 raise
+
 
 def main():
     parser = argparse.ArgumentParser()
