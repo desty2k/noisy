@@ -199,7 +199,7 @@ class Crawler(object):
                 # remove the dead-end link from our list
                 self._remove_and_blacklist(random_link)
 
-        except requests.exceptions.RequestException:
+        except (requests.exceptions.RequestException, UnicodeDecodeError):
             logging.debug("Exception on URL: %s, ", random_link +
                           "removing from list and trying again!")
             self._remove_and_blacklist(random_link)
