@@ -11,7 +11,6 @@ import sys
 import time
 from urllib3.exceptions import LocationParseError
 
-
 try:  # Python 2
     from urllib.parse import urljoin, urlparse
 except ImportError:  # Python 3
@@ -58,10 +57,9 @@ class Crawler(object):
         :return: the response Requests object
         """
         random_user_agent = random.choice(self._config["user_agents"])
-        headers = {'user-agent': random_user_agent}
+        headers = {"user-agent": random_user_agent}
 
         response = requests.get(url, headers=headers, timeout=5)
-
         return response
 
     @staticmethod
@@ -158,7 +156,9 @@ class Crawler(object):
         and blacklists it so we don't visit it in the future
         :param link: link to remove and blacklist
         """
-        self._config['blacklisted_urls'].append(link)
+        if link not in self._links:
+            return
+        self._config["blacklisted_urls"].append(link)
         del self._links[self._links.index(link)]
 
     def _browse_from_links(self, depth=0):
@@ -170,7 +170,7 @@ class Crawler(object):
         itself until a dead end has reached or when we ran out of links
         :param depth: our current link depth
         """
-        is_depth_reached = depth >= self._config['max_depth']
+        is_depth_reached = depth >= self._config["max_depth"]
         if not len(self._links) or is_depth_reached:
             logging.debug("Hit a dead end, moving to the next root URL")
             # escape from the recursion, we don't have links to continue
@@ -213,7 +213,7 @@ class Crawler(object):
         :param file_path: path of the config file
         :return:
         """
-        with open(file_path, 'r') as config_file:
+        with open(file_path, "r") as config_file:
             config = json.load(config_file)
             self.set_config(config)
 
@@ -267,6 +267,10 @@ class Crawler(object):
                 logging.debug("found %d links", len(self._links))
                 self._browse_from_links()
 
+            except UnicodeDecodeError:
+                logging.warning("Error decoding root url: {}".format(url))
+                self._remove_and_blacklist(url)
+
             except requests.exceptions.RequestException:
                 logging.warning("Error connecting to root url: %s", url)
                 time.sleep(random.randrange(self._config["min_sleep"],
@@ -306,10 +310,10 @@ def main():
     crawler.load_config_file(args.config)
 
     if args.timeout:
-        crawler.set_option('timeout', args.timeout)
+        crawler.set_option("timeout", args.timeout)
 
     crawler.crawl()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
