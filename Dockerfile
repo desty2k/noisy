@@ -1,4 +1,4 @@
-FROM jfloff/alpine-python:2.7-slim
+FROM python:alpine
 WORKDIR /
 COPY requirements.txt .
 RUN pip install -r requirements.txt
