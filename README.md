@@ -3,20 +3,26 @@
 [![CircleCI](https://circleci.com/gh/1tayH/noisy/tree/master.svg?style=shield)](https://circleci.com/gh/Arduous/noisy/tree/master)
 
 
-A simple python script that generates random HTTP/DNS traffic noise in the background while you go about your regular web browsing, to make your web traffic data less valuable for selling and for extra obscurity.
-
-Tested on MacOS High Sierra, Ubuntu 16.04 and Raspbian Stretch and is compatible with both Python 2.7 and 3.6
+A Python script that generates random HTTP/DNS traffic noise in the background while you go about your regular web browsing, to make your web traffic data less valuable for selling and for extra obscurity.
 
 ## Getting Started
 
-These instructions will get you a copy of the project up and running on your local machine
+These instructions will get you project up and running on your machine.
+Although noisy.py runs with Python 2.7, the deprecation of Python 2 is now [in sight](https://pythonclock.org/) and Python 3 should be favored.
+Two approaches are proposed: running noisy.py directly or running it within a container (Docker)
+
 
 ### Dependencies
 
 Install `requests` if you do not have it already installed, using `pip`:
 
 ```
-pip install requests
+pip3 install requests
+```
+
+It is likely that the above command should be run with elevated privilegies.
+```
+sudo pip3 install requests
 ```
 
 ### Usage
@@ -34,7 +40,7 @@ cd noisy
 Run the script
 
 ```
-python noisy.py --config config.json
+python3 noisy.py --config config.json
 
 # or
 
@@ -43,7 +49,7 @@ make run
 
 The program can accept a number of command line arguments:
 ```
-$ python noisy.py --help
+$ python3 noisy.py --help
 usage: noisy.py [-h] [--log -l] --config -c [--timeout -t]
 
 optional arguments:
