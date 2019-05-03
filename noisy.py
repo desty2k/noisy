@@ -5,11 +5,14 @@ import json
 import logging
 import random
 import re
-import requests
 import signal
 import sys
 import time
+
+import requests
 from urllib3.exceptions import LocationParseError
+from validators.url import url as urlValidator 
+
 
 try:  # Python 2
     from urllib.parse import urljoin, urlparse
@@ -91,25 +94,6 @@ class Crawler(object):
 
         return link
 
-    @staticmethod
-    def _is_valid_url(url):
-        """
-        Check if a url is a valid url.
-        Used to filter out invalid values that were found in the "href"
-        attribute, for example "javascript:void(0)"
-        taken from https://stackoverflow.com/questions/7160737
-        :param url: url to be checked
-        :return: boolean indicating whether the URL is valid or not
-        """
-        regex = re.compile(
-            r'^(?:http|ftp)s?://'  # http:// or https://
-            # domain...
-            r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|'
-            r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})'  # ...or ip
-            r'(?::\d+)?'  # optional port
-            r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-        return re.match(regex, url) is not None
-
     def _is_blacklisted(self, url):
         """
         Checks is a URL is blacklisted
@@ -130,8 +114,7 @@ class Crawler(object):
         :return: boolean of whether or not the url should be accepted and
         potentially visited
         """
-        return url and self._is_valid_url(url) \
-            and not self._is_blacklisted(url)
+        return url and urlValidator(url) and not self._is_blacklisted(url)
 
     def _extract_urls(self, body, root_url):
         """
@@ -181,14 +164,15 @@ class Crawler(object):
             raise self.LifecycleManagement("Timeout reached.")
 
         random_link = random.choice(self._links)
+        
+        # sleep for a random amount of time
+        time.sleep(random.randrange(self._config["min_sleep"],
+                                    self._config["max_sleep"]))
+        
         try:
             logging.info("Visiting %s", random_link)
             sub_page = self._request(random_link).content
             sub_links = self._extract_urls(sub_page, random_link)
-
-            # sleep for a random amount of time
-            time.sleep(random.randrange(self._config["min_sleep"],
-                                        self._config["max_sleep"]))
 
             # make sure we have more than 1 link to pick from
             if len(sub_links) > 1:
@@ -201,7 +185,7 @@ class Crawler(object):
 
         except (requests.exceptions.RequestException, UnicodeDecodeError):
             logging.debug("Exception on URL: %s, ", random_link +
-                          "removing from list and trying again!")
+                          " removing from list and trying again!")
             self._remove_and_blacklist(random_link)
 
         self._browse_from_links(depth + 1)
@@ -268,13 +252,11 @@ class Crawler(object):
                 self._browse_from_links()
 
             except UnicodeDecodeError:
-                logging.warning("Error decoding root url: {}".format(url))
+                logging.warning("Error decoding root url: %s", url)
                 self._remove_and_blacklist(url)
 
             except requests.exceptions.RequestException:
                 logging.warning("Error connecting to root url: %s", url)
-                time.sleep(random.randrange(self._config["min_sleep"],
-                                            self._config["max_sleep"]))
 
             except MemoryError:
                 logging.warning("Error: content at url: %s ", url +
@@ -287,7 +269,7 @@ class Crawler(object):
                 logging.info("Exiting with reason: %s", e.reason)
                 return
 
-            except:
+            except Exception:
                 logging.error("Unrecoverable encountered at url: %s", url)
                 raise
 

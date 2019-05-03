@@ -14,15 +14,15 @@ Two approaches are proposed: running noisy.py directly or running it within a co
 
 ### Dependencies
 
-Install `requests` if you do not have it already installed, using `pip`:
+Install `requests` and `validators` if you do not have them already installed, using `pip`:
 
 ```
-pip3 install requests
+pip3 install requests validators
 ```
 
 It is likely that the above command should be run with elevated privilegies.
 ```
-sudo pip3 install requests
+sudo pip3 install requests validators
 ```
 
 ### Usage
