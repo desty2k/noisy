@@ -8,7 +8,6 @@ A Python script that generates random HTTP/DNS traffic noise in the background w
 ## Getting Started
 
 These instructions will get you project up and running on your machine.
-Although noisy.py runs with Python 2.7, the deprecation of Python 2 is now [in sight](https://pythonclock.org/) and Python 3 should be favored.
 Two approaches are proposed: running noisy.py directly or running it within a container (Docker)
 
 

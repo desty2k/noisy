@@ -6,24 +6,12 @@ import logging
 import random
 import re
 import signal
-import sys
 import time
+from urllib.parse import urljoin, urlparse
 
 import requests
 from urllib3.exceptions import LocationParseError
 from validators.url import url as urlValidator 
-
-
-try:  # Python 2
-    from urllib.parse import urljoin, urlparse
-except ImportError:  # Python 3
-    from urlparse import urljoin, urlparse
-
-try:  # Python 2
-    reload(sys)
-    sys.setdefaultencoding('utf-8')
-except NameError:  # Python 3
-    pass
 
 
 class Crawler(object):
