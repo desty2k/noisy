@@ -1,3 +1,9 @@
 .idea
 .DS_Store
 *.pyc
+.project
+.pydevproject
+.settings/
+os
+sys
+/Pipfile
