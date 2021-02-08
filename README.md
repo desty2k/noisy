@@ -1,7 +1,7 @@
 
 # Noisy
 ![build](https://github.com/desty2k/noisy/workflows/build/badge.svg)
-
+![Docker Pulls](https://img.shields.io/docker/pulls/desty2k/noisynet)
 
 A Python script that generates random HTTP/DNS traffic noise in the background while you go about your regular web browsing, to make your web traffic data less valuable for selling and for extra obscurity.
 
@@ -13,22 +13,17 @@ Two approaches are proposed: running noisy.py directly or running it within a co
 
 ### Dependencies
 
-Install `requests` and `validators` if you do not have them already installed, using `pip`:
+Install requirements using `pip`:
 
 ```
-pip3 install requests validators
-```
-
-It is likely that the above command should be run with elevated privilegies.
-```
-sudo pip3 install requests validators
+pip install -r requirements.txt
 ```
 
 ### Usage
 
 Clone the repository
 ```
-git clone https://github.com/1tayH/noisy.git
+git clone https://github.com/desty2k/noisy.git
 ```
 
 Navigate into the `noisy` directory
@@ -86,17 +81,22 @@ DEBUG:urllib3.connectionpool:https://www.reddit.com:443 "GET /user/Saditon HTTP/
 ...
 ```
 
-## Build Using Docker
+## Run in Docker
 
-1. Build the image
+1. Navigate into the `noisy` directory
+```
+cd noisy
+```
 
-`docker build -t noisy .`
+2. Run container using `docker-compose`
+```
+docker-compose up -d
+```
 
-2. Create the container and run:
-
-`docker run -it noisy --config config.json`
-
-To further simplify starting a few containers with noisy you can run `make scale=[num of containers] multi-run`.
+3. To start a few containers with noisy
+```
+docker-compose up -d --scale noisy=5
+```
 
 ## Some examples
 
