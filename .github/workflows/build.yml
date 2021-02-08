@@ -39,6 +39,7 @@ jobs:
       
   docker:
     name: Create and publish Docker image
+    needs: [build]
     runs-on: ubuntu-latest
     steps:
       - name: Set up QEMU
