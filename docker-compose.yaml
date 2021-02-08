@@ -1,0 +1,10 @@
+version: '3'
+services:
+  noisy:
+    container_name: noisy
+    image: desty2k/noisynet:latest
+    environment:
+      - TZ=Europe/Warsaw
+    restart: "no"
+    network_mode: host
+    command: --config config.json --timeout 0

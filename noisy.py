@@ -188,6 +188,7 @@ class Crawler(object):
         with open(file_path, "r") as config_file:
             config = json.load(config_file)
             self.set_config(config)
+            logging.info("Loaded config file: {}".format(file_path))
 
     def set_config(self, config):
         """
@@ -229,6 +230,7 @@ class Crawler(object):
         Collects links from our root urls, stores them and then calls
         `_browse_from_links` to browse them
         """
+        logging.info("Starting crawler loop")
         self._start_time = datetime.datetime.now()
 
         while True:
@@ -266,8 +268,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--log', metavar='-l', type=str,
                         help='logging level', default='info')
-    parser.add_argument('--config', metavar='-c', required=True,
-                        type=str, help='config file')
+    parser.add_argument('--config', metavar='-c', required=False,
+                        type=str, help='config file', default="config.json")
     parser.add_argument('--timeout', metavar='-t', required=False, type=int,
                         help='how many seconds the crawler should be running',
                         default=False)
