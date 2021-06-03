@@ -18,7 +18,7 @@ from urllib3.exceptions import LocationParseError
 from validators.url import url as urlValidator
 import paho.mqtt.client as mqtt
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 MQTT_DEVIE_NAME = "Noisy"
 MQTT_DEVICE_UNIQUE_ID = "noisy_mqtt"
