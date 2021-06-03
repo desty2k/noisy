@@ -83,7 +83,9 @@ jobs:
 
       - name: Set changelog variable
         if: env.BUILD_VERSION != env.RELEASE_VERSION && env.RELEASE_VERSION != ''
-        run: echo "CHANGELOG_BODY=$(echo $steps.changelog.outputs.changelog)" >> $GITHUB_ENV
+        run: |
+          echo "${{ steps.changelog.outputs.changelog }}" > changelog.txt
+          echo "CHANGELOG_BODY=$(cat changelog.txt)" >> $GITHUB_ENV
 
       - name: Set first release changelog
         if: env.BUILD_VERSION != env.RELEASE_VERSION && env.RELEASE_VERSION == ''
