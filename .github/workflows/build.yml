@@ -3,7 +3,7 @@ name: build
 
 on:
   push:
-    branches: '**'
+    branches: [ master ]
 
   workflow_dispatch:
 
@@ -74,6 +74,16 @@ jobs:
           echo "Latest package version is:"
           echo "${{env.RELEASE_VERSION}}"
 
+      - name: Create a first release
+        if: env.BUILD_VERSION != env.RELEASE_VERSION && env.RELEASE_VERSION == ''
+
+        uses: softprops/action-gh-release@v1
+        with:
+          body: 'First release'
+          tag_name: ${{ env.BUILD_VERSION }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
+
       - name: Generate changelog
         if: env.BUILD_VERSION != env.RELEASE_VERSION && env.RELEASE_VERSION != ''
         id: changelog
@@ -81,22 +91,12 @@ jobs:
         with:
           myToken: ${{ secrets.DEPLOY_TOKEN }}
 
-      - name: Set changelog variable
-        if: env.BUILD_VERSION != env.RELEASE_VERSION && env.RELEASE_VERSION != ''
-        run: |
-          echo "${{ steps.changelog.outputs.changelog }}" > changelog.txt
-          echo "CHANGELOG_BODY=$(cat changelog.txt)" >> $GITHUB_ENV
-
-      - name: Set first release changelog
-        if: env.BUILD_VERSION != env.RELEASE_VERSION && env.RELEASE_VERSION == ''
-        run: echo "CHANGELOG_BODY=$(echo First release)" >> $GITHUB_ENV
-
       - name: Create a release
-        if: env.BUILD_VERSION != env.RELEASE_VERSION
+        if: env.BUILD_VERSION != env.RELEASE_VERSION && env.RELEASE_VERSION != ''
 
         uses: softprops/action-gh-release@v1
         with:
-          body: ${{ env.CHANGELOG_BODY }}
+          body: ${{ steps.changelog.outputs.changelog }}
           tag_name: ${{ env.BUILD_VERSION }}
         env:
           GITHUB_TOKEN: ${{ secrets.DEPLOY_TOKEN }}
@@ -104,4 +104,4 @@ jobs:
       - name: Skip release
         if: env.BUILD_VERSION == env.RELEASE_VERSION
         run: |
-          echo "Skipping because version does not changed"
+          echo 'Skipping because version does not changed"
