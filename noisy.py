@@ -393,7 +393,7 @@ def main():
         return
 
     host = os.getenv('HOST', args.host)
-    port = os.getenv('PORT', args.port)
+    port = int(os.getenv('PORT', args.port))
     user = os.getenv('USER', args.user)
     password = os.getenv('PASSWORD', args.password)
 
