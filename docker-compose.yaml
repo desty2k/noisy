@@ -1,6 +1,11 @@
 version: '3'
 services:
   noisy:
-    image: desty2k/noisynet:latest
+    container_name: noisy-mqtt
+    image: desty2k/noisy-mqtt:latest
     restart: "no"
-    command: --config config.json --timeout 0
+    environment:
+      HOST: <-UPDATE->
+      PORT: 1883
+      USERNAME: <-UPDATE->
+      PASSWORD: <-UPDATE->

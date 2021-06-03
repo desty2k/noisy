@@ -1,17 +1,38 @@
 # -*- coding: utf-8 -*-
+
+import os
+import re
+import time
+import json
+import signal
+import random
+import logging
 import argparse
 import datetime
-import json
-import logging
-import random
-import re
-import signal
-import time
+import requests
+import threading
+
 from urllib.parse import urljoin, urlparse
 
-import requests
 from urllib3.exceptions import LocationParseError
-from validators.url import url as urlValidator 
+from validators.url import url as urlValidator
+import paho.mqtt.client as mqtt
+
+__version__ = "1.0.0"
+
+MQTT_DEVIE_NAME = "Noisy"
+MQTT_DEVICE_UNIQUE_ID = "noisy_mqtt"
+MQTT_SET_TOPIC = "homeassistant/switch/noisy_mqtt/set"
+MQTT_STATE_TOPIC = "homeassistant/switch/noisy_mqtt/"
+MQTT_CONFIG_TOPIC = "homeassistant/switch/noisy_mqtt/config"
+
+MQTT_CONFIG_MESSAGE = """{{"name": "{}", "unique_id": "{}", "command_topic": "{}",
+                           "state_topic": "{}"}}""".format(MQTT_DEVIE_NAME,
+                                                           MQTT_DEVIE_NAME,
+                                                           MQTT_SET_TOPIC,
+                                                           MQTT_STATE_TOPIC)
+MQTT_ON_MESSAGE = "ON"
+MQTT_OFF_MESSAGE = "OFF"
 
 
 class Crawler(object):
@@ -22,6 +43,7 @@ class Crawler(object):
         """
         self._config = {}
         self._links = []
+        self._run_flag = None
         self._start_time = None
         signal.signal(signal.SIGINT, self._signal_sigint_handler)
 
@@ -36,6 +58,20 @@ class Crawler(object):
             """
             Exception.__init__(self)
             self.reason = event
+
+    class DummyFlag:
+        """
+        Dummy run flag with is_set implementation
+        """
+        def __init__(self):
+            pass
+
+        def is_set(self):
+            """
+            Check if run flag is set
+            :return: always True
+            """
+            return True
 
     def _signal_sigint_handler(self, sig, frame):
         # pylint: disable=unused-argument
@@ -141,6 +177,10 @@ class Crawler(object):
         itself until a dead end has reached or when we ran out of links
         :param depth: our current link depth
         """
+        if not self._run_flag.is_set():
+            logging.info("Run flag not set, exiting")
+            return
+
         is_depth_reached = depth >= self._config["max_depth"]
         if not len(self._links) or is_depth_reached:
             logging.debug("Hit a dead end, moving to the next root URL")
@@ -225,15 +265,16 @@ class Crawler(object):
 
         return is_timeout_set and is_timed_out
 
-    def crawl(self):
+    def crawl(self, run_flag=None):
         """
         Collects links from our root urls, stores them and then calls
         `_browse_from_links` to browse them
         """
         logging.info("Starting crawler loop")
         self._start_time = datetime.datetime.now()
+        self._run_flag = run_flag if run_flag is not None else self.DummyFlag()
 
-        while True:
+        while self._run_flag.is_set():
             url = random.choice(self._config["root_urls"])
             try:
                 body = self._request(url).content
@@ -264,27 +305,94 @@ class Crawler(object):
                 raise
 
 
+class MQTTNoisy:
+
+    def __init__(self):
+        super(MQTTNoisy, self).__init__()
+        self.logger = logging.getLogger(self.__class__.__name__)
+
+        self.noisy = Crawler()
+
+        self.noisy_thread = None
+        self.noisy_run_flag = threading.Event()
+
+        self.mqtt_client = mqtt.Client("noisy")
+        self.mqtt_client.on_connect = self.on_connect
+        self.mqtt_client.on_message = self.on_message
+
+    def load_config_file(self, file_path):
+        self.noisy.load_config_file(file_path)
+
+    def connect(self, host, port, username=None, password=None):
+        if username is not None and password is not None:
+            self.mqtt_client.username_pw_set(username, password)
+
+        try:
+            self.mqtt_client.connect(host, port)
+        except Exception as e:
+            self.logger.error("Failed to connect to {}:{}: {}".format(host, port, e))
+            raise e
+        self.mqtt_client.publish(MQTT_CONFIG_TOPIC, MQTT_CONFIG_MESSAGE)
+        self.mqtt_client.publish(MQTT_STATE_TOPIC, MQTT_OFF_MESSAGE)
+        self.mqtt_client.loop_forever()
+
+    def on_connect(self, client: mqtt.Client, userdata, flags, rc):
+        self.logger.info("Connected to {}:{}".format(client._host, client._port))
+        client.subscribe(MQTT_SET_TOPIC)
+        self.logger.info("Subscribed to topic: {}".format(MQTT_STATE_TOPIC))
+
+    def on_message(self, client: mqtt.Client, userdata, msg):
+        self.logger.debug("Received {}:{}".format(msg.topic, msg.payload))
+        if msg.topic == MQTT_SET_TOPIC:
+            if msg.payload.decode() == MQTT_ON_MESSAGE:
+                self.logger.info("Enabling Noisy")
+                self.noisy_run_flag.set()
+                self.noisy_thread = threading.Thread(target=self.noisy.crawl, args=(self.noisy_run_flag, ))
+                self.noisy_thread.start()
+                client.publish(MQTT_STATE_TOPIC, MQTT_ON_MESSAGE)
+
+            elif msg.payload.decode() == MQTT_OFF_MESSAGE:
+                self.logger.info("Disabling Noisy")
+                self.noisy_run_flag.clear()
+                self.noisy_thread.join()
+                client.publish(MQTT_STATE_TOPIC, MQTT_OFF_MESSAGE)
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--log', metavar='-l', type=str,
                         help='logging level', default='info')
     parser.add_argument('--config', metavar='-c', required=False,
                         type=str, help='config file', default="config.json")
-    parser.add_argument('--timeout', metavar='-t', required=False, type=int,
-                        help='how many seconds the crawler should be running',
-                        default=False)
+
+    parser.add_argument('--host', metavar='-h', required=False,
+                        type=str, help='mqtt server address')
+    parser.add_argument('--port', metavar='-p', required=False,
+                        type=int, help='mqtt server port', default=1883)
+    parser.add_argument('--user', metavar='-u', required=False,
+                        type=str, help='mqtt client username', default=None)
+    parser.add_argument('--password', metavar='-P', required=False,
+                        type=str, help='mqtt client password', default=None)
+
+    parser.add_argument('-v', '--version', action='version',
+                        version='v{}'.format(__version__))
+
     args = parser.parse_args()
 
     level = getattr(logging, args.log.upper())
     logging.basicConfig(level=level)
 
-    crawler = Crawler()
-    crawler.load_config_file(args.config)
+    host = os.getenv('HOST', args.host)
+    port = os.getenv('PORT', args.port)
+    user = os.getenv('USER', args.user)
+    password = os.getenv('PASSWORD', args.password)
 
-    if args.timeout:
-        crawler.set_option("timeout", args.timeout)
+    if not host:
+        raise ValueError("MQTT server address is required")
 
-    crawler.crawl()
+    client = MQTTNoisy()
+    client.load_config_file(args.config)
+    client.connect(host, port, username=user, password=password)
 
 
 if __name__ == "__main__":
