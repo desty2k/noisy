@@ -75,18 +75,18 @@ jobs:
           echo "${{env.RELEASE_VERSION}}"
 
       - name: Generate changelog
-        if: env.BUILD_VERSION != env.RELEASE_VERSION && env.RELEASE_VERSION != ""
+        if: env.BUILD_VERSION != env.RELEASE_VERSION && env.RELEASE_VERSION != ''
         id: changelog
         uses: metcalfc/changelog-generator@v1.0.0
         with:
           myToken: ${{ secrets.DEPLOY_TOKEN }}
 
       - name: Set changelog variable
-        if: env.BUILD_VERSION != env.RELEASE_VERSION && env.RELEASE_VERSION != ""
+        if: env.BUILD_VERSION != env.RELEASE_VERSION && env.RELEASE_VERSION != ''
         run: echo "CHANGELOG_BODY=$(echo ${{ steps.changelog.outputs.changelog }})" >> $GITHUB_ENV
 
       - name: Set first release changelog
-        if: env.BUILD_VERSION != env.RELEASE_VERSION && env.RELEASE_VERSION == ""
+        if: env.BUILD_VERSION != env.RELEASE_VERSION && env.RELEASE_VERSION == ''
         run: echo "CHANGELOG_BODY=$(echo First release)" >> $GITHUB_ENV
 
       - name: Create a release
