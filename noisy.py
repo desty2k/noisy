@@ -364,6 +364,8 @@ def main():
                         help='logging level', default='info')
     parser.add_argument('--config', metavar='-c', required=False,
                         type=str, help='config file', default="config.json")
+    parser.add_argument('--timeout', metavar='-t', required=False,
+                        type=int, help='timeout for testing noisy', default=False)
 
     parser.add_argument('--host', metavar='-h', required=False,
                         type=str, help='mqtt server address')
@@ -381,6 +383,14 @@ def main():
 
     level = getattr(logging, args.log.upper())
     logging.basicConfig(level=level)
+
+    if args.timeout is not False:
+        crawler = Crawler()
+        crawler.load_config_file(args.config)
+        if args.timeout:
+            crawler.set_option("timeout", args.timeout)
+        crawler.crawl()
+        return
 
     host = os.getenv('HOST', args.host)
     port = os.getenv('PORT', args.port)
