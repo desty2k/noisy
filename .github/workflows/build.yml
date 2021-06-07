@@ -104,4 +104,4 @@ jobs:
       - name: Skip release
         if: env.BUILD_VERSION == env.RELEASE_VERSION
         run: |
-          echo 'Skipping because version does not changed"
+          echo 'Skipping because version does not changed'
