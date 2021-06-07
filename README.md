@@ -6,7 +6,7 @@
 A Python script that generates random HTTP/DNS traffic noise in the background while you go about your regular web 
 browsing, to make your web traffic data less valuable for selling and for extra obscurity.
 
-This fork supports Home Assistant MQTT integration auto discovery. After successfull connection, 
+This fork supports Home Assistant MQTT integration. After successfull connection, 
 Noisy will be available as a Home Assistant switch.
 
 ![](<images/ha.jpg>)
